@@ -1,0 +1,66 @@
+﻿@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="dashboard">
+    <h2>Sensor Data Ingestion &amp; Telemetry</h2>
+
+    <!-- ==================== Sensor registration ==================== -->
+    <section>
+        <h3>Register a Sensor</h3>
+        <input id="deviceId" placeholder="MAC / Device ID" />
+        <input id="location" placeholder="Zone / Node ID" />
+        <select id="category">
+            <option value="Environmental">Environmental</option>
+            <option value="PowerConsumption">PowerConsumption</option>
+            <option value="Actuator">Actuator</option>
+        </select>
+        <button onclick="registerSensor()">Register</button>
+        <p id="registerStatus"></p>
+    </section>
+
+    <hr />
+
+    <!-- ==================== File / log attachment ==================== -->
+    <section>
+        <h3>Attach Device Log / Config File</h3>
+        <input id="attachDeviceId" placeholder="Device ID to attach to" />
+        <input id="attachFile" type="file" />
+        <button onclick="uploadAttachment()">Upload</button>
+        <p id="uploadStatus"></p>
+    </section>
+
+    <hr />
+
+    <!-- ==================== Engagement feature: live anomaly feed + gateway health score ==================== -->
+    <section>
+        <h3>Live Telemetry Feed</h3>
+        <p>Gateway Health Score: <span id="healthScore" class="health-score good">100%</span></p>
+        <ul id="feedList" class="feed-list"></ul>
+    </section>
+
+    <hr />
+
+    <!-- ==================== Recursive deployment-path validation demo ==================== -->
+    <section>
+        <h3>Validate Deployment Path</h3>
+        <p>Tries to resolve "Facility A / Zone 1 / Sub-Zone B" against a sample deployment tree.</p>
+        <button onclick="validateSamplePath()">Run Validation</button>
+        <p id="pathValidationResult"></p>
+    </section>
+
+    <hr />
+
+    <!-- ==================== Operator overloading demo ==================== -->
+    <section>
+        <h3>Aggregate Two Smart Meters</h3>
+        <button onclick="aggregateMeters()">Aggregate Meter A (120W) + Meter B (95W)</button>
+        <p id="aggregateResult"></p>
+    </section>
+</div>
+
+@section Scripts {
+    <script>
+        startFeedPolling();
+    </script>
+}
