@@ -1,5 +1,6 @@
 
 using SmartX.API.Services;
+using SmartX.API.Part2;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +12,10 @@ builder.Services.AddSwaggerGen();
 // DeploymentValidator wraps the recursive path-validation algorithm.
 builder.Services.AddSingleton<TelemetryStore>();
 builder.Services.AddSingleton<DeploymentValidator>();
+builder.Services.AddSingleton<TelemetryStore>();
+builder.Services.AddSingleton<DeploymentValidator>();
+
+builder.Services.AddSmartXStream();   // queues, registry, command stack, prediction engine
 
 var app = builder.Build();
 
