@@ -1,6 +1,6 @@
 
 using SmartX.API.Services;
-using SmartX.API.Part2;
+using SmartX.API.Part_2;
 
 var builder = WebApplication.CreateBuilder(args);
 
