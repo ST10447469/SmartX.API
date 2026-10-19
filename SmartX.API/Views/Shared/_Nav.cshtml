@@ -1,0 +1,11 @@
+﻿@{
+    var path = (Context.Request.Path.Value ?? "/").ToLowerInvariant();
+    bool Telemetry() => path.StartsWith("/home/dashboard");
+    bool On(string p) => path.StartsWith(p);
+}
+<nav class="topbar smartx-nav" aria-label="Smart-X modules">
+    <strong class="brand">Smart-X IoT Mesh Gateway</strong>
+    <a href="/Home/Dashboard" aria-current="@(Telemetry() ? "page" : null)">Sensor telemetry</a>
+    <a href="/command-stream" aria-current="@(On("/command-stream") ? "page" : null)">Command stream</a>
+    <a href="/topology" aria-current="@(On("/topology") ? "page" : null)">Network topology</a>
+</nav>
