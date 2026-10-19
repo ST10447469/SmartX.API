@@ -1,16 +1,118 @@
-﻿body {
-    font-family: 'Segoe UI', Arial, sans-serif;
+﻿/* ==========================================================
+   Smart-X shared theme
+   Graphite surfaces, teal accent, coral alerts.
+   All class names are kept, so no view or script changes.
+   ========================================================== */
+:root {
+    --bg: #0b1015;
+    --bg-soft: #0f161d;
+    --panel: #131b24;
+    --panel-hi: #182330;
+    --line: #223140;
+    --text: #e6edf3;
+    --mute: #8aa0b2;
+    --accent: #2dd4bf;
+    --accent-ink: #04211d;
+    --accent-soft: rgba(45, 212, 191, 0.14);
+    --ok: #34d399;
+    --alert: #ff6b57;
+    --alert-soft: rgba(255, 107, 87, 0.14);
+    --warn: #fbbf24;
+    --info: #38bdf8;
+    --radius: 14px;
+}
+
+html {
+    color-scheme: dark;
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', system-ui, -apple-system, Arial, sans-serif;
     margin: 0;
-    background: #0f172a;
-    color: #e2e8f0;
+    background: var(--bg);
+    background-image: radial-gradient(60rem 30rem at 85% -10%, rgba(45, 212, 191, 0.07), transparent 60%);
+    background-attachment: fixed;
+    color: var(--text);
+    line-height: 1.5;
 }
 
+h1, h2, h3 {
+    letter-spacing: -0.01em;
+}
+
+a:focus-visible, button:focus-visible, input:focus-visible,
+select:focus-visible, tr:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* ---------- top bar and navigation ---------- */
 .topbar {
-    padding: 1rem 2rem;
-    background: #111827;
-    border-bottom: 1px solid #1f2937;
+    padding: 0.85rem 2rem;
+    background: rgba(11, 16, 21, 0.85);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line);
+    position: sticky;
+    top: 0;
+    z-index: 20;
 }
 
+.smartx-nav {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+}
+
+    .smartx-nav .brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+        margin-right: 1.25rem;
+        font-size: 1.05rem;
+        font-weight: 700;
+    }
+
+        .smartx-nav .brand::before {
+            content: "";
+            width: 0.7rem;
+            height: 0.7rem;
+            border-radius: 3px;
+            background: var(--accent);
+            box-shadow: 0 0 0 4px var(--accent-soft);
+        }
+
+    .smartx-nav a {
+        color: var(--mute);
+        text-decoration: none;
+        padding: 0.45rem 0.95rem;
+        border-radius: 999px;
+        border: 1px solid transparent;
+        font-size: 0.93rem;
+        transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+    }
+
+        .smartx-nav a:hover {
+            color: var(--text);
+            background: var(--panel);
+        }
+
+        .smartx-nav a[aria-current] {
+            color: var(--accent);
+            background: var(--accent-soft);
+            border-color: rgba(45, 212, 191, 0.35);
+            font-weight: 600;
+        }
+
+.content {
+    min-height: 60vh;
+}
+
+/* ---------- landing page ---------- */
 .pillars {
     display: flex;
     gap: 1.5rem;
@@ -21,11 +123,18 @@
 .pillar-card {
     flex: 1;
     min-width: 240px;
-    background: #1e293b;
-    border-radius: 12px;
+    background: var(--panel);
+    border-radius: var(--radius);
     padding: 1.5rem;
-    border: 1px solid #334155;
+    border: 1px solid var(--line);
+    transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
 }
+
+    .pillar-card:hover {
+        transform: translateY(-3px);
+        border-color: rgba(45, 212, 191, 0.45);
+        background: var(--panel-hi);
+    }
 
     .pillar-card.disabled {
         opacity: 0.45;
@@ -36,8 +145,11 @@
         margin-top: 0;
     }
 
+/* ---------- shared form controls (Part 1 dashboard) ---------- */
 .dashboard {
     padding: 2rem;
+    max-width: 1280px;
+    margin: 0 auto;
 }
 
     .dashboard section {
@@ -45,23 +157,41 @@
     }
 
     .dashboard input, .dashboard select {
-        background: #1e293b;
-        border: 1px solid #334155;
-        color: #e2e8f0;
-        padding: 0.4rem 0.6rem;
-        border-radius: 6px;
+        font: inherit;
+        background: var(--bg-soft);
+        border: 1px solid var(--line);
+        color: var(--text);
+        padding: 0.5rem 0.7rem;
+        border-radius: 8px;
         margin-right: 0.5rem;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
+
+        .dashboard input::placeholder {
+            color: #5f7589;
+        }
 
     .dashboard button {
-        background: #2563eb;
-        color: white;
+        font: inherit;
+        font-weight: 600;
+        background: var(--accent);
+        color: var(--accent-ink);
         border: none;
-        padding: 0.5rem 1rem;
-        border-radius: 6px;
+        padding: 0.55rem 1.1rem;
+        border-radius: 8px;
         cursor: pointer;
+        transition: background 0.2s ease, transform 0.1s ease;
     }
 
+        .dashboard button:hover {
+            background: #5eead4;
+        }
+
+        .dashboard button:active {
+            transform: translateY(1px);
+        }
+
+/* ---------- live feed (Part 1) ---------- */
 .feed-list {
     list-style: none;
     padding: 0;
@@ -72,46 +202,696 @@
 .feed-item {
     display: flex;
     justify-content: space-between;
-    padding: 0.6rem 1rem;
-    margin-bottom: 0.4rem;
-    border-radius: 8px;
-    background: #1e293b;
-    border-left: 4px solid #334155;
+    gap: 1rem;
+    padding: 0.65rem 1rem;
+    margin-bottom: 0.45rem;
+    border-radius: 10px;
+    background: var(--bg-soft);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--accent);
+    font-variant-numeric: tabular-nums;
     transition: background 0.3s ease, border-color 0.3s ease;
 }
 
     .feed-item.anomaly {
-        border-left-color: #f87171;
+        border-left-color: var(--alert);
         animation: pulse 1.2s ease-in-out infinite;
     }
 
 @keyframes pulse {
     0% {
-        background-color: #1e293b;
+        background-color: var(--bg-soft);
     }
 
     50% {
-        background-color: #3f1d1d;
+        background-color: #2a1714;
     }
 
     100% {
-        background-color: #1e293b;
+        background-color: var(--bg-soft);
     }
 }
 
 .health-score {
     font-size: 2.5rem;
     font-weight: 700;
+    line-height: 1;
 }
 
     .health-score.good {
-        color: #4ade80;
+        color: var(--ok);
     }
 
     .health-score.warn {
-        color: #facc15;
+        color: var(--warn);
     }
 
     .health-score.bad {
-        color: #f87171;
+        color: var(--alert);
     }
+
+/* ---------- Part 1 dashboard layout ---------- */
+.dash-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.75rem;
+}
+
+    .dash-head h2 {
+        margin: 0;
+        font-size: 1.7rem;
+        font-weight: 700;
+    }
+
+.dash-sub {
+    margin: 0.35rem 0 0;
+    color: var(--mute);
+}
+
+.health-card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 0.85rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    min-width: 11rem;
+}
+
+    .health-card .label {
+        color: var(--mute);
+        font-size: 0.82rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+    }
+
+.dash-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    gap: 1.5rem;
+    align-items: start;
+}
+
+@media (max-width: 900px) {
+    .dash-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.dash-side {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.dashboard .dash-card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-top: 2px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 1.3rem 1.45rem;
+    margin-bottom: 0;
+}
+
+.dash-card h3 {
+    margin: 0 0 0.25rem;
+    font-size: 1.05rem;
+}
+
+.dash-card .hint {
+    margin: 0 0 1rem;
+    color: var(--mute);
+    font-size: 0.88rem;
+}
+
+.dash-form label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--mute);
+    margin-bottom: 0.3rem;
+    letter-spacing: 0.02em;
+}
+
+.dashboard .dash-form input,
+.dashboard .dash-form select {
+    width: 100%;
+    margin: 0 0 0.9rem;
+    padding: 0.55rem 0.75rem;
+}
+
+    .dashboard .dash-form input:focus,
+    .dashboard .dash-form select:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+
+    .dashboard .dash-form input[type="file"]::file-selector-button {
+        background: var(--line);
+        color: var(--text);
+        border: none;
+        border-radius: 6px;
+        padding: 0.35rem 0.75rem;
+        margin-right: 0.75rem;
+        cursor: pointer;
+    }
+
+.dashboard .dash-card button {
+    width: 100%;
+}
+
+.status-text,
+.result-text {
+    margin: 0.8rem 0 0;
+    min-height: 1.2rem;
+    font-size: 0.9rem;
+    color: var(--mute);
+}
+
+.result-text {
+    color: var(--text);
+}
+
+.feed-card h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.live-dot {
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 50%;
+    background: var(--ok);
+    box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.18);
+    animation: livepulse 1.8s ease-in-out infinite;
+}
+
+@keyframes livepulse {
+    0%, 100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.35;
+    }
+}
+
+.feed-card .feed-list {
+    max-width: none;
+    max-height: 34rem;
+    overflow-y: auto;
+}
+
+    .feed-card .feed-list:empty::before {
+        content: "Waiting for telemetry...";
+        display: block;
+        color: var(--mute);
+        padding: 0.6rem 0;
+    }
+
+.feed-card .feed-item {
+    padding: 0.75rem 1rem;
+}
+
+.placeholder {
+    margin: 2rem;
+    max-width: 42rem;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-top: 2px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 1.6rem;
+}
+
+    .placeholder h1 {
+        margin-top: 0;
+        font-size: 1.5rem;
+    }
+
+    .placeholder p {
+        color: var(--mute);
+        margin-bottom: 0;
+    }
+
+/* ==========================================================
+   Part 2: real-time command stream page
+   ========================================================== */
+.stream {
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+    display: grid;
+    gap: 1.5rem;
+    align-items: start;
+    grid-template-columns: minmax(0, 1fr) 23rem;
+    grid-template-rows: auto auto 1fr;
+    grid-template-areas: "lane lane" "devices side" "chart side";
+    font-variant-numeric: tabular-nums;
+}
+
+    /* grid children may shrink, so long content can never push into a neighbour */
+    .stream > *,
+    #lane > div {
+        min-width: 0;
+        min-height: 0;
+    }
+
+@media (max-width: 960px) {
+    .stream {
+        grid-template-columns: 1fr;
+        grid-template-rows: none;
+        grid-template-areas: "lane" "side" "devices" "chart";
+        padding: 1rem;
+    }
+}
+
+.stream section {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 1.3rem 1.45rem;
+}
+
+.stream h2 {
+    margin: 0 0 0.9rem;
+    font-size: 0.95rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--mute);
+}
+
+    /* contains the floated buttons inside headings */
+    .stream h2::after {
+        content: "";
+        display: block;
+        clear: both;
+    }
+
+.stream .muted {
+    color: var(--mute);
+    font-size: 0.88rem;
+}
+
+.stream .empty {
+    color: var(--mute);
+    font-size: 0.9rem;
+    margin: 0.2rem 0;
+}
+
+/* processing lanes */
+#lane {
+    grid-area: lane;
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1.4fr;
+    gap: 1.5rem;
+    align-items: stretch;
+}
+
+@media (max-width: 700px) {
+    #lane {
+        grid-template-columns: 1fr;
+    }
+}
+
+.lane-box {
+    border-left: 4px solid var(--line);
+    padding-left: 1.1rem;
+}
+
+    .lane-box.crit {
+        border-color: var(--alert);
+    }
+
+    .lane-box.std {
+        border-color: var(--info);
+    }
+
+    .lane-box .big {
+        font-size: 2.9rem;
+        font-weight: 700;
+        line-height: 1;
+        letter-spacing: -0.02em;
+    }
+
+    .lane-box.crit .big {
+        color: var(--alert);
+    }
+
+    .lane-box.std .big {
+        color: var(--info);
+    }
+
+.stream .counts {
+    display: flex;
+    gap: 1.2rem;
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
+}
+
+/* the processing log is a fixed-height box with its own scrollbar */
+#log {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    height: 8.5rem;
+    overflow-y: auto;
+    overflow-x: hidden;
+    word-break: break-word;
+    font-size: 0.85rem;
+}
+
+    #log li {
+        padding: 0.22rem 0;
+        border-bottom: 1px dashed var(--line);
+    }
+
+.stream .tag {
+    display: inline-block;
+    min-width: 5.8rem;
+    font-weight: 700;
+}
+
+    .stream .tag.CRITICAL {
+        color: var(--alert);
+    }
+
+    .stream .tag.STANDARD {
+        color: var(--info);
+    }
+
+#devices {
+    grid-area: devices;
+}
+
+#side {
+    grid-area: side;
+    display: grid;
+    gap: 1.5rem;
+    align-content: start;
+}
+
+#chart {
+    grid-area: chart;
+    position: relative;
+    z-index: 0;
+}
+
+/* filters and controls */
+.stream .filters {
+    display: flex;
+    gap: 0.55rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+.stream input, .stream select {
+    font: inherit;
+    background: var(--bg-soft);
+    border: 1px solid var(--line);
+    color: var(--text);
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+}
+
+    .stream input:focus, .stream select:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+
+.stream input {
+    flex: 1;
+    min-width: 11rem;
+}
+
+    .stream input::placeholder {
+        color: #5f7589;
+    }
+
+.stream button {
+    font: inherit;
+    font-weight: 600;
+    background: var(--accent);
+    color: var(--accent-ink);
+    border: none;
+    padding: 0.42rem 0.9rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.1s ease;
+}
+
+    .stream button:hover {
+        background: #5eead4;
+    }
+
+    .stream button:active {
+        transform: translateY(1px);
+    }
+
+    .stream button.ghost {
+        background: transparent;
+        border: 1px solid var(--line);
+        color: var(--text);
+        font-weight: 500;
+    }
+
+        .stream button.ghost:hover {
+            background: var(--panel-hi);
+            border-color: var(--mute);
+        }
+
+    .stream button:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+
+    .stream button.float-right {
+        float: right;
+        padding: 0.18rem 0.65rem;
+        font-size: 0.78rem;
+        text-transform: none;
+        letter-spacing: 0;
+    }
+
+/* device table */
+.stream .table-wrap {
+    overflow-x: auto;
+}
+
+.stream table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.stream th {
+    text-align: left;
+    font-weight: 600;
+    color: var(--mute);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 0.5rem 0.65rem;
+    border-bottom: 1px solid var(--line);
+}
+
+.stream td {
+    padding: 0.7rem 0.65rem;
+    border-bottom: 1px solid var(--line);
+    vertical-align: middle;
+}
+
+.stream tbody tr {
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+    .stream tbody tr:hover {
+        background: var(--panel-hi);
+    }
+
+    .stream tbody tr.sel {
+        background: var(--accent-soft);
+    }
+
+    .stream tbody tr.alerting {
+        animation: alertpulse 1.6s ease-in-out infinite;
+    }
+
+        .stream tbody tr.alerting td:first-child {
+            box-shadow: inset 4px 0 0 var(--alert);
+        }
+
+@keyframes alertpulse {
+    0% {
+        background-color: transparent;
+    }
+
+    50% {
+        background-color: var(--alert-soft);
+    }
+
+    100% {
+        background-color: transparent;
+    }
+}
+
+.stream .pill {
+    padding: 0.15rem 0.6rem;
+    border-radius: 999px;
+    background: var(--panel-hi);
+    border: 1px solid var(--line);
+    font-size: 0.78rem;
+}
+
+.stream .dot {
+    display: inline-block;
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 50%;
+    margin-right: 0.45rem;
+    background: var(--ok);
+}
+
+    .stream .dot.off {
+        background: #5f7589;
+    }
+
+    .stream .dot.alert {
+        background: var(--alert);
+    }
+
+.stream .alerttext {
+    color: var(--alert);
+    font-size: 0.85rem;
+}
+
+.stream .state-ON {
+    color: var(--ok);
+    font-weight: 700;
+}
+
+.stream .state-OFF {
+    color: var(--mute);
+}
+
+/* suggestions, alerts, command history */
+.stream .card {
+    background: var(--bg-soft);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--line);
+    border-radius: 10px;
+    padding: 0.8rem 0.95rem;
+    margin-bottom: 0.75rem;
+}
+
+    .stream .card.action {
+        border-left-color: var(--accent);
+    }
+
+    .stream .card.insight {
+        border-left-color: var(--warn);
+    }
+
+    .stream .card h3 {
+        margin: 0;
+        font-size: 0.97rem;
+    }
+
+    .stream .card p {
+        margin: 0.25rem 0 0.55rem;
+        font-size: 0.85rem;
+        color: var(--mute);
+    }
+
+.stream .conf {
+    height: 5px;
+    background: var(--line);
+    border-radius: 3px;
+    margin: 0.4rem 0 0.65rem;
+}
+
+    .stream .conf i {
+        display: block;
+        height: 100%;
+        background: var(--accent);
+        border-radius: 3px;
+    }
+
+.stream ul.plain {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+    .stream ul.plain li {
+        padding: 0.55rem 0;
+        border-bottom: 1px solid var(--line);
+        font-size: 0.9rem;
+    }
+
+        .stream ul.plain li:last-child {
+            border-bottom: none;
+        }
+
+/* timeline chart: colours are set here, not in the script */
+.stream svg {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+    .stream svg polyline {
+        stroke: var(--accent);
+    }
+
+    .stream svg line {
+        stroke: var(--line);
+    }
+
+    .stream svg text {
+        fill: var(--mute);
+    }
+
+#toast {
+    position: fixed;
+    bottom: 1.25rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--panel-hi);
+    border: 1px solid var(--accent);
+    color: var(--text);
+    padding: 0.7rem 1.2rem;
+    border-radius: 10px;
+    display: none;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
+    z-index: 50;
+}
+
+/* ---------- reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+    .live-dot {
+        animation: none;
+    }
+
+    .feed-item.anomaly {
+        animation: none;
+        background: #2a1714;
+    }
+
+    .stream tbody tr.alerting {
+        animation: none;
+        background: var(--alert-soft);
+    }
+
+    .pillar-card {
+        transition: none;
+    }
+}
