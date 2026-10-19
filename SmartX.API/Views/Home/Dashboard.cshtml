@@ -3,60 +3,86 @@
 }
 
 <div class="dashboard">
-    <h2>Sensor Data Ingestion &amp; Telemetry</h2>
 
-    <!-- ==================== Sensor registration ==================== -->
-    <section>
-        <h3>Register a Sensor</h3>
-        <input id="deviceId" placeholder="MAC / Device ID" />
-        <input id="location" placeholder="Zone / Node ID" />
-        <select id="category">
-            <option value="Environmental">Environmental</option>
-            <option value="PowerConsumption">PowerConsumption</option>
-            <option value="Actuator">Actuator</option>
-        </select>
-        <button onclick="registerSensor()">Register</button>
-        <p id="registerStatus"></p>
-    </section>
+    <header class="dash-head">
+        <div>
+            <h2>Sensor Data Ingestion &amp; Telemetry</h2>
+            <p class="dash-sub">Register devices, watch live readings and validate deployment paths.</p>
+        </div>
+        <div class="health-card">
+            <span class="label">Gateway health</span>
+            <span id="healthScore" class="health-score good">100%</span>
+        </div>
+    </header>
 
-    <hr />
+    <div class="dash-grid">
 
-    <!-- ==================== File / log attachment ==================== -->
-    <section>
-        <h3>Attach Device Log / Config File</h3>
-        <input id="attachDeviceId" placeholder="Device ID to attach to" />
-        <input id="attachFile" type="file" />
-        <button onclick="uploadAttachment()">Upload</button>
-        <p id="uploadStatus"></p>
-    </section>
+        <!-- ==================== Live anomaly feed ==================== -->
+        <section class="dash-card feed-card" aria-label="Live telemetry feed">
+            <h3><span class="live-dot" aria-hidden="true"></span>Live telemetry feed</h3>
+            <p class="hint">New readings appear here. Anomalies are highlighted in red.</p>
+            <ul id="feedList" class="feed-list"></ul>
+        </section>
 
-    <hr />
+        <div class="dash-side">
 
-    <!-- ==================== Engagement feature: live anomaly feed + gateway health score ==================== -->
-    <section>
-        <h3>Live Telemetry Feed</h3>
-        <p>Gateway Health Score: <span id="healthScore" class="health-score good">100%</span></p>
-        <ul id="feedList" class="feed-list"></ul>
-    </section>
+            <!-- ==================== Sensor registration ==================== -->
+            <section class="dash-card">
+                <h3>Register a sensor</h3>
+                <p class="hint">Add a device to the gateway so it can send telemetry.</p>
+                <div class="dash-form">
+                    <label for="deviceId">MAC / Device ID</label>
+                    <input id="deviceId" placeholder="e.g. 24:6F:28:AA:00:01" />
 
-    <hr />
+                    <label for="location">Zone / Node ID</label>
+                    <input id="location" placeholder="e.g. Zone-1" />
 
-    <!-- ==================== Recursive deployment-path validation demo ==================== -->
-    <section>
-        <h3>Validate Deployment Path</h3>
-        <p>Tries to resolve "Facility A / Zone 1 / Sub-Zone B" against a sample deployment tree.</p>
-        <button onclick="validateSamplePath()">Run Validation</button>
-        <p id="pathValidationResult"></p>
-    </section>
+                    <label for="category">Category</label>
+                    <select id="category">
+                        <option value="Environmental">Environmental</option>
+                        <option value="PowerConsumption">PowerConsumption</option>
+                        <option value="Actuator">Actuator</option>
+                    </select>
 
-    <hr />
+                    <button onclick="registerSensor()">Register</button>
+                </div>
+                <p id="registerStatus" class="status-text" role="status"></p>
+            </section>
 
-    <!-- ==================== Operator overloading demo ==================== -->
-    <section>
-        <h3>Aggregate Two Smart Meters</h3>
-        <button onclick="aggregateMeters()">Aggregate Meter A (120W) + Meter B (95W)</button>
-        <p id="aggregateResult"></p>
-    </section>
+            <!-- ==================== File / log attachment ==================== -->
+            <section class="dash-card">
+                <h3>Attach device log / config</h3>
+                <p class="hint">Upload a log or configuration file to a registered device.</p>
+                <div class="dash-form">
+                    <label for="attachDeviceId">Device ID</label>
+                    <input id="attachDeviceId" placeholder="Device ID to attach to" />
+
+                    <label for="attachFile">File</label>
+                    <input id="attachFile" type="file" />
+
+                    <button onclick="uploadAttachment()">Upload</button>
+                </div>
+                <p id="uploadStatus" class="status-text" role="status"></p>
+            </section>
+
+            <!-- ==================== Recursive deployment-path validation demo ==================== -->
+            <section class="dash-card">
+                <h3>Validate deployment path</h3>
+                <p class="hint">Resolves "Facility A / Zone 1 / Sub-Zone B" against a sample deployment tree.</p>
+                <button onclick="validateSamplePath()">Run validation</button>
+                <p id="pathValidationResult" class="result-text" role="status"></p>
+            </section>
+
+            <!-- ==================== Operator overloading demo ==================== -->
+            <section class="dash-card">
+                <h3>Aggregate two smart meters</h3>
+                <p class="hint">Combines two meter readings using the overloaded + operator.</p>
+                <button onclick="aggregateMeters()">Aggregate Meter A (120W) + Meter B (95W)</button>
+                <p id="aggregateResult" class="result-text" role="status"></p>
+            </section>
+
+        </div>
+    </div>
 </div>
 
 @section Scripts {
