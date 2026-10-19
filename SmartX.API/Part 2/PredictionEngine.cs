@@ -1,13 +1,7 @@
 ﻿namespace SmartX.API.Part_2;
 
 
-/// <summary>
-/// Learns "event A is usually followed by event B" (a first-order transition table) from alerts,
-/// searches and commands, then suggests what the operator is likely to do next. Rule-based checks
-/// highlight problem devices immediately, even before any pattern has been learned.
-///
-/// Events: ALERT:{mac}  |  SEARCH:{term}  |  CMD:{mac}:{ACTION}
-/// </summary>
+
 public class PredictionEngine(DeviceRegistry registry)
 {
     static readonly TimeSpan Window = TimeSpan.FromMinutes(2);   // max gap for two events to be "related"
