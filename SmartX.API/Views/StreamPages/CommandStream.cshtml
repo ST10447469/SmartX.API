@@ -1,0 +1,238 @@
+﻿@{
+    Layout = null;
+}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Smart-X · Command stream</title>
+    <link rel="stylesheet" href="~/css/site.css?v=3" />
+</head>
+<body>
+    @await Html.PartialAsync("_Nav")
+    <main class="stream">
+        <section id="lane" aria-label="Processing lanes">
+            <div class="lane-box crit">
+                <h2>Critical lane (priority queue)</h2>
+                <div class="big" id="critDepth">0</div><div class="counts muted"><span>waiting</span><span id="critDone">0 processed</span></div>
+            </div>
+            <div class="lane-box std">
+                <h2>Standard lane (FIFO queue)</h2>
+                <div class="big" id="stdDepth">0</div><div class="counts muted"><span>waiting</span><span id="stdDone">0 processed</span></div>
+                <div class="counts muted"><span id="dups">0 duplicate alerts blocked</span></div>
+            </div>
+            <div>
+                <h2>Processing order <button id="pause" class="ghost float-right">Pause worker</button></h2>
+                      <ul id="log"></ul>
+            </div>
+        </section>
+
+        <section id="devices">
+            <h2>Devices</h2>
+            <div class="filters">
+                <input id="q" type="search" placeholder="Search name, MAC, category or metric" aria-label="Search devices">
+                <select id="cat" aria-label="Category"><option value="all">All categories</option></select>
+                <select id="st" aria-label="Alert state">
+                    <option value="all">Any state</option>
+                    <option value="alert">Alerting</option>
+                    <option value="offline">Disconnected</option>
+                    <option value="healthy">Healthy</option>
+                </select>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>Device</th><th>Category</th><th>Latest reading</th><th>Status</th><th>Override</th></tr></thead>
+                    <tbody id="rows"></tbody>
+                </table>
+            </div>
+            <p class="empty" id="none" hidden>No devices match. Clear the filters, or click "Start devices" in the simulator panel.</p>
+        </section>
+
+        <section id="chart">
+            <h2 id="chartTitle">Timeline</h2>
+            <svg id="svg" viewBox="0 0 700 170" role="img" aria-label="Sensor timeline"></svg>
+            <p class="muted" id="chartNote">Select a device to see its readings in time order.</p>
+        </section>
+
+        <div id="side">
+            <section aria-label="Device simulator">
+                <h2>Device simulator</h2>
+                <p class="muted" id="simState">Devices stopped: nothing is being sent.</p>
+                <div class="filters">
+                    <button id="simToggle">Start devices</button>
+                </div>
+                <p class="muted">Fault scenarios</p>
+                <div class="filters">
+                    <button class="ghost" id="simMoisture">Moisture drop</button>
+                    <button class="ghost" id="simPower">Power spike</button>
+                    <button class="ghost" id="simTemp">Overheat</button>
+                    <button class="ghost" id="simNormal">Back to normal</button>
+                </div>
+                <p class="muted">Data structure tests</p>
+                <div class="filters">
+                    <button class="ghost" id="simPriority">Priority queue demo</button>
+                    <button class="ghost" id="simDup">Duplicate alerts</button>
+                </div>
+            </section>
+            <section aria-label="Suggested actions"><h2>Suggested actions and insights</h2><div id="insights"></div></section>
+            <section aria-label="Active alerts"><h2>Active alerts</h2><ul class="plain" id="alerts"></ul></section>
+            <section aria-label="Command history">
+                <h2>Command history <button id="undo" class="ghost float-right">Undo last</button></h2>
+                <ul class="plain" id="cmds"></ul>
+            </section>
+        </div>
+    </main>
+    <div id="toast" role="status"></div>
+    <script>
+            const $ = s => document.querySelector(s);
+            const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+            let selected = null; const knownCats = new Set();
+            const filt = { q: sessionStorage.q || '', cat: sessionStorage.cat || 'all', st: sessionStorage.st || 'all' };   // survives navigation
+            $('#q').value = filt.q; $('#st').value = filt.st;
+
+            async function api(path, opts) {
+                const r = await fetch('/api/stream/' + path, opts);
+                const body = await r.json().catch(() => ({}));
+                if (!r.ok) throw new Error(body.error || r.statusText);
+                return body;
+            }
+            function toast(msg) { const t = $('#toast'); t.textContent = msg; t.style.display = 'block'; clearTimeout(t._h); t._h = setTimeout(() => t.style.display = 'none', 3200); }
+            const post = (path, body) => api(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
+            const devQuery = rec => `devices?category=${encodeURIComponent(filt.cat)}&alertState=${filt.st}&search=${encodeURIComponent(filt.q)}&recordSearch=${rec}`;
+
+            function renderDevices(list) {
+                const cur = $('#cat'); let grew = false;
+                list.forEach(d => { if (!knownCats.has(d.category)) { knownCats.add(d.category); grew = true; } });
+                if (grew) cur.innerHTML = '<option value="all">All categories</option>' + [...knownCats].sort().map(c => `<option>${esc(c)}</option>`).join('');
+                cur.value = filt.cat;
+                $('#none').hidden = list.length > 0;
+                $('#rows').innerHTML = list.map(d => {
+                    const bad = d.alerts.length > 0, cls = !d.online ? 'off' : bad ? 'alert' : '';
+                    const status = `<span class="dot ${cls}"></span>${d.online ? (bad ? 'Alerting' : 'Healthy') : 'Disconnected'}` +
+                        d.alerts.filter(a => a !== 'Device disconnected').map(a => `<div class="alerttext">${esc(a)}</div>`).join('');
+                    const act = d.deviceType === 'actuator'
+                        ? `<span class="state-${d.state}">${esc(d.state)}</span> <button data-cmd="ON" data-mac="${esc(d.mac)}">On</button> <button class="ghost" data-cmd="OFF" data-mac="${esc(d.mac)}">Off</button>`
+                        : '<span class="muted">Sensor</span>';
+                    const rowCls = (d.mac === selected ? 'sel ' : '') + (bad && d.online ? 'alerting' : '');
+                    return `<tr tabindex="0" data-mac="${esc(d.mac)}" class="${rowCls}">
+                  <td><strong>${esc(d.name)}</strong><div class="muted">${esc(d.mac)}</div></td><td><span class="pill">${esc(d.category)}</span></td>
+                  <td>${esc(d.metric)} ${esc(d.lastValue)}</td><td>${status}</td><td>${act}</td></tr>`;
+                }).join('');
+            }
+            function renderQueues(q) {
+                $('#critDepth').textContent = q.criticalDepth; $('#stdDepth').textContent = q.standardDepth;
+                $('#critDone').textContent = q.criticalProcessed + ' processed'; $('#stdDone').textContent = (q.processed - q.criticalProcessed) + ' processed';
+                $('#dups').textContent = q.duplicatesSuppressed + ' duplicate alerts blocked';
+                $('#pause').textContent = q.paused ? 'Resume worker' : 'Pause worker'; $('#pause').dataset.paused = q.paused;
+                $('#log').innerHTML = q.recent.map(e => `<li><span class="tag ${e.lane}">#${e.seq} ${e.lane}</span>${esc(e.mac)} ${esc(e.metric)} ${esc(e.value)}</li>`).join('') || '<li class="muted">Nothing processed yet.</li>';
+            }
+            function renderInsights(list) {
+                $('#insights').innerHTML = list.length ? list.map((i, n) => {
+                    const kind = i.kind === 'Suggested action' ? 'action' : 'insight';
+                    const btn = i.action ? `<button data-ins="${n}">Apply</button>` : (i.mac ? `<button class="ghost" data-ins="${n}">Inspect</button>` : '');
+                    return `<div class="card ${kind}"><h3>${esc(i.title)}</h3><p>${esc(i.detail)}</p>
+                  <div class="conf" title="Confidence"><i style="width:${Math.round(i.confidence * 100)}%"></i></div>${btn}</div>`;
+                }).join('') : '<p class="empty">No suggestions yet. Insights appear when a device alerts or the system learns your habits.</p>';
+                window._ins = list;
+            }
+            function renderAlerts(list) {
+                $('#alerts').innerHTML = list.map(a => `<li><span class="dot alert"></span><strong>${esc(a.device)}</strong> · ${esc(a.reason)}</li>`).join('') || '<li class="muted">All clear.</li>';
+            }
+            function renderCmds(list) {
+                $('#undo').disabled = list.length === 0;
+                $('#cmds').innerHTML = list.slice(0, 8).map(c => `<li><strong>${esc(c.action)}</strong> ${esc(c.deviceName)}
+                <div class="muted">was ${esc(c.previousState)} · ${new Date(c.at).toLocaleTimeString()}</div></li>`).join('') || '<li class="muted">No overrides yet.</li>';
+            }
+            async function drawChart() {
+                if (!selected) return;
+                const pts = await api(`devices/${encodeURIComponent(selected)}/history?take=60`);
+                const svg = $('#svg'); $('#chartTitle').textContent = 'Timeline · ' + selected;
+                if (pts.length < 2) { svg.innerHTML = ''; $('#chartNote').textContent = 'Waiting for more readings from this device.'; return; }
+                const vs = pts.map(p => p.v), lo = Math.min(...vs), hi = Math.max(...vs), span = hi - lo || 1;
+                const x = i => 40 + i * (640 / (pts.length - 1)), y = v => 150 - ((v - lo) / span) * 130;
+                svg.innerHTML = `<line x1="40" y1="150" x2="680" y2="150"/><line x1="40" y1="20" x2="40" y2="150"/>
+                <polyline fill="none" stroke-width="2.5" points="${pts.map((p, i) => x(i) + ',' + y(p.v)).join(' ')}"/>
+                <text x="34" y="24" text-anchor="end" font-size="11">${hi}</text><text x="34" y="150" text-anchor="end" font-size="11">${lo}</text>`;
+                $('#chartNote').textContent = `${pts.length} readings, oldest to newest.`;
+            }
+            async function refresh() {
+                try {
+                    const [d, q, i, a, c] = await Promise.all([api(devQuery(false)), api('queues'), api('insights'), api('alerts'), api('commands')]);
+                    renderDevices(d); renderQueues(q); renderInsights(i); renderAlerts(a); renderCmds(c); drawChart();
+                } catch (e) { console.warn(e); }
+            }
+
+            /* ---------------- Device simulator: every packet goes through POST /api/stream/ingest ---------------- */
+            const sim = { timer: null, vals: { moisture: 55, flow: 3, power: 800, temperature: 24 } };
+            const SIM_DEVICES = [
+                ['24:6F:28:AA:00:01', 'Moisture Sensor B', 'Hydroponics', 'sensor', 'moisture'],
+                ['24:6F:28:AA:00:02', 'Pump A', 'Hydroponics', 'actuator', 'flow'],
+                ['24:6F:28:AA:00:03', 'Smart Relay 1', 'Power', 'actuator', 'power'],
+                ['24:6F:28:AA:00:04', 'Greenhouse Temp', 'Environment', 'sensor', 'temperature']];
+            const sendPacket = (mac, name, category, deviceType, metric, value) => post('ingest', { mac, name, category, deviceType, metric, value });
+            const jitter = () => Math.round(Math.random() * 4 - 2);
+            function beat() { SIM_DEVICES.forEach(([m, n, c, t, k]) => sendPacket(m, n, c, t, k, sim.vals[k] + jitter()).catch(() => { })); }
+            function setSimState() {
+                $('#simState').textContent = sim.timer ? 'Devices running: each device sends a reading every 5 seconds.' : 'Devices stopped: nothing is being sent.';
+                $('#simToggle').textContent = sim.timer ? 'Stop devices' : 'Start devices';
+            }
+            function startSim() { if (sim.timer) return; beat(); sim.timer = setInterval(beat, 5000); sessionStorage.simOn = '1'; setSimState(); }
+            function stopSim() { clearInterval(sim.timer); sim.timer = null; sessionStorage.simOn = '0'; setSimState(); }
+            function scenario(changes, msg) { Object.assign(sim.vals, changes); if (!sim.timer) startSim(); else beat(); toast(msg); setTimeout(refresh, 600); }
+
+            async function priorityDemo() {
+                const btn = $('#simPriority'); btn.disabled = true;
+                try {
+                    await post('worker/pause');
+                    for (let i = 0; i < 20; i++) await sendPacket('24:6F:28:AA:00:04', 'Greenhouse Temp', 'Environment', 'sensor', 'temperature', 24 + i % 3);
+                    await sendPacket('24:6F:28:AA:00:03', 'Smart Relay 1', 'Power', 'actuator', 'power', 4200);   // sent LAST
+                    toast('20 standard packets and 1 power spike are waiting. Releasing in 4 seconds...');
+                    refresh();
+                    await new Promise(r => setTimeout(r, 4000));
+                } catch (e) { toast(e.message); }
+                await post('worker/resume').catch(() => { });
+                btn.disabled = false; refresh();
+                toast('Released. In Processing order, the CRITICAL packet has the lowest number: it jumped the queue.');
+            }
+            async function duplicateDemo() {
+                for (let i = 0; i < 10; i++) await sendPacket('24:6F:28:AA:00:01', 'Moisture Sensor B', 'Hydroponics', 'sensor', 'moisture', 12);
+                toast('Sent 10 identical critical packets. One alert is raised; the other 9 are blocked.');
+                setTimeout(refresh, 600);
+            }
+
+            $('#simToggle').addEventListener('click', () => sim.timer ? stopSim() : startSim());
+            $('#simMoisture').addEventListener('click', () => scenario({ moisture: 12 }, 'Moisture dropped to 12%'));
+            $('#simPower').addEventListener('click', () => scenario({ power: 4200 }, 'Power spike: 4200 W'));
+            $('#simTemp').addEventListener('click', () => scenario({ temperature: 52 }, 'Temperature rose to 52 °C'));
+            $('#simNormal').addEventListener('click', () => scenario({ moisture: 55, power: 800, temperature: 24 }, 'Readings back to normal'));
+            $('#simPriority').addEventListener('click', priorityDemo);
+            $('#simDup').addEventListener('click', duplicateDemo);
+
+            /* ---------------- Dashboard events ---------------- */
+            function setFilter(k, v) { filt[k] = v; sessionStorage[k] = v; refresh(); }
+            $('#q').addEventListener('input', e => setFilter('q', e.target.value));
+            $('#q').addEventListener('change', () => api(devQuery(true)));                 // committed search -> feeds the predictor
+            $('#q').addEventListener('keydown', e => { if (e.key === 'Enter') api(devQuery(true)); });
+            $('#cat').addEventListener('change', e => setFilter('cat', e.target.value));
+            $('#st').addEventListener('change', e => setFilter('st', e.target.value));
+            $('#pause').addEventListener('click', async e => { await post(e.target.dataset.paused === 'true' ? 'worker/resume' : 'worker/pause'); refresh(); });
+            $('#undo').addEventListener('click', async () => { try { const c = await post('commands/undo'); toast(`Undid ${c.action} on ${c.deviceName}`); } catch (e) { toast(e.message); } refresh(); });
+            $('#rows').addEventListener('click', async e => {
+                const b = e.target.closest('button[data-cmd]');
+                if (b) { try { await post('commands', { mac: b.dataset.mac, action: b.dataset.cmd }); toast(`Sent ${b.dataset.cmd}`); } catch (er) { toast(er.message); } return refresh(); }
+                const tr = e.target.closest('tr[data-mac]'); if (tr) { selected = tr.dataset.mac; refresh(); }
+            });
+            $('#insights').addEventListener('click', async e => {
+                const b = e.target.closest('button[data-ins]'); if (!b) return; const i = window._ins[b.dataset.ins];
+                if (i.action && i.action.startsWith('SEARCH:')) { $('#q').value = i.action.slice(7); setFilter('q', $('#q').value); }
+                else if (i.action && i.mac) { try { await post('commands', { mac: i.mac, action: i.action }); toast(`Sent ${i.action} to ${i.title}`); } catch (er) { toast(er.message); } refresh(); }
+                else if (i.mac) { selected = i.mac; refresh(); }
+            });
+
+            if (sessionStorage.simOn === '1') startSim();   // keep devices running after navigating away and back
+            setSimState();
+            refresh(); setInterval(refresh, 1500);
+    </script>
+</body>
+</html>
