@@ -2,20 +2,142 @@
     ViewData["Title"] = "Smart-X Gateway";
 }
 
-<h2 style="padding: 2rem 2rem 0;">Smart-X Gateway</h2>
+<style>
+    .gateway-container {
+        padding: 2rem;
+        color: #f1f5f9;
+    }
 
-<div class="pillars">
-    <div class="pillar-card">
-        <h3> Sensor Data Ingestion &amp; Telemetry</h3>
-        <p>Register sensors, ingest live readings, and monitor the mesh in real time.</p>
-        <a href="@Url.Action("Dashboard", "Home")">Open Dashboard →</a>
+    .gateway-header {
+        margin-bottom: 2rem;
+    }
+
+        .gateway-header h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .gateway-header p {
+            color: #94a3b8;
+            font-size: 1rem;
+            margin: 0;
+        }
+
+    .pillars {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .pillar-card {
+        background: linear-gradient(145deg, #172033, #111827);
+        border: 1px solid #293548;
+        border-radius: 16px;
+        padding: 1.75rem;
+        min-height: 220px;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+    }
+
+        .pillar-card:hover {
+            transform: translateY(-5px);
+            border-color: #38bdf8;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+        }
+
+    .pillar-icon {
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        background: rgba(56, 189, 248, 0.12);
+        color: #38bdf8;
+        font-size: 1.5rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .pillar-card h3 {
+        font-size: 1.2rem;
+        font-weight: 650;
+        margin: 0 0 0.75rem;
+        color: #f8fafc;
+    }
+
+    .pillar-card p {
+        color: #aab7c8;
+        line-height: 1.6;
+        margin: 0 0 1.5rem;
+    }
+
+    .pillar-link {
+        margin-top: auto;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #38bdf8;
+        font-weight: 600;
+        text-decoration: none;
+        transition: gap 0.2s ease, color 0.2s ease;
+    }
+
+        .pillar-link:hover {
+            color: #7dd3fc;
+            gap: 0.8rem;
+        }
+
+    @@media (max-width: 600px) {
+        .gateway-container {
+            padding: 1.25rem;
+        }
+
+        .gateway-header h2 {
+            font-size: 1.6rem;
+        }
+    }
+</style>
+
+<div class="gateway-container">
+    <div class="gateway-header">
+        <h2>Smart-X Gateway</h2>
+        <p>Manage your IoT ecosystem, monitor telemetry, and control connected devices.</p>
     </div>
 
-    <div class="pillar-card disabled">
-        <h3> Real-Time Command Stream &amp; History</h3>
-    </div>
+    <div class="pillars">
+        <div class="pillar-card">
+            <div class="pillar-icon">⌁</div>
 
-    <div class="pillar-card disabled">
-        <h3> Network Topology &amp; Mesh Routing</h3>
+            <h3>Sensor Data Ingestion &amp; Telemetry</h3>
+
+            <p>
+                Register sensors, inspect incoming readings, and monitor
+                live telemetry across the Smart-X mesh network.
+            </p>
+
+            <a class="pillar-link"
+               href="@Url.Action("Dashboard", "Home")">
+                Open Dashboard <span>→</span>
+            </a>
+        </div>
+
+        <div class="pillar-card">
+            <div class="pillar-icon">⌘</div>
+
+            <h3>Real-Time Command Stream &amp; History</h3>
+
+            <p>
+                Send commands to connected devices, track execution status,
+                and review previous commands.
+            </p>
+
+            <a class="pillar-link"
+               href="@Url.Action("CommandStream", "Home")">
+                Open Command Stream <span>→</span>
+            </a>
+        </div>
     </div>
 </div>
