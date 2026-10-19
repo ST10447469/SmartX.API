@@ -3,7 +3,7 @@ using Microsoft.Extensions.Hosting;
 
 
 
-/// <summary>Background consumer: drains the queues (critical first) and sweeps for silent nodes.</summary>
+/// Background consumer: drains the queues (critical first) and sweeps for silent nodes
 public class StreamWorker(IngestionPipeline pipeline, DeviceRegistry registry, PredictionEngine prediction) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken ct)

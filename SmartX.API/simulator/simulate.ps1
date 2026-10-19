@@ -1,12 +1,4 @@
-<#
- Smart-X device simulator. Every reading is POSTed to the API exactly like a real ESP32 would.
- Usage (PowerShell 7+), pass your https address with -Base:
-   ./simulate.ps1 -Base https://localhost:7000 -Mode normal
-   ./simulate.ps1 -Base https://localhost:7000 -Mode drop       # moisture crashes to 12%   -> critical alert
-   ./simulate.ps1 -Base https://localhost:7000 -Mode spike      # smart relay power spike   -> critical alert
-   ./simulate.ps1 -Base https://localhost:7000 -Mode burst      # 40 standard packets then 1 critical (pause worker first)
-   ./simulate.ps1 -Base https://localhost:7000 -Mode offline    # one heartbeat per device, then silence -> disconnect alerts
-   ./simulate.ps1 -Base https://localhost:7000 -Mode duplicate  # 10 identical critical packets -> only 1 alert
+
 #>
 param(
   [string]$Base = "https://localhost:7000",

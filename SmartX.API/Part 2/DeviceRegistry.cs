@@ -1,10 +1,6 @@
 ﻿namespace SmartX.API.Part_2;
 
-/// <summary>
-/// Dictionary       : live devices keyed by MAC  -> O(1) lookup per packet.
-/// SortedDictionary : per-device history keyed by timestamp -> always in time order for timeline graphs.
-/// HashSet          : active alerts / disconnected nodes -> duplicates are rejected for free.
-/// </summary>
+
 public class DeviceRegistry
 {
     public static readonly TimeSpan OfflineAfter = TimeSpan.FromSeconds(20);
@@ -45,7 +41,7 @@ public class DeviceRegistry
         }
     }
 
-    /// <returns>true if this alert is new; false if the HashSet rejected a duplicate.</returns>
+    
     public bool RaiseAlert(string mac, string metric, string reason)
     {
         lock (_lock)
@@ -62,7 +58,7 @@ public class DeviceRegistry
             _alerts.RemoveWhere(k => k.StartsWith($"{mac}|{metric.ToLowerInvariant()}|", StringComparison.OrdinalIgnoreCase));
     }
 
-    /// <summary>Marks silent nodes as disconnected. Already-flagged nodes are ignored by the HashSet.</summary>
+  
     public List<string> SweepOffline()
     {
         var added = new List<string>();

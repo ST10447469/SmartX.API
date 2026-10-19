@@ -1,10 +1,7 @@
 ﻿namespace SmartX.API.Part_2;
 
 
-/// <summary>
-/// Queue&lt;T&gt;      : standard FIFO lane for ordinary telemetry.
-/// PriorityQueue : critical lane (power spike, moisture crash). Always drained first.
-/// </summary>
+
 public class IngestionPipeline(DeviceRegistry registry, PredictionEngine prediction)
 {
     readonly Queue<StreamPacket> _standard = new();

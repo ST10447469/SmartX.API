@@ -1,7 +1,7 @@
 ﻿namespace SmartX.API.Part_2;
 
 
-/// <summary>A telemetry packet exactly as a device (ESP32, smart plug...) would POST it.</summary>
+
 public record StreamPacket
 {
     public string Mac { get; init; } = "";
@@ -33,7 +33,7 @@ public record ProcessedEntry(long Seq, string Lane, string Mac, string Metric, d
 public record HistoryPoint(DateTime T, double V);
 public record CommandRequest(string Mac, string Action);
 
-/// <summary>Thresholds that make a packet "critical" and therefore eligible for the priority queue.</summary>
+
 public static class AlertRules
 {
     public static bool IsCritical(StreamPacket p, out string reason)
@@ -46,6 +46,6 @@ public static class AlertRules
         return false;
     }
 
-    /// <summary>Lower number = served first. Power spikes outrank everything else.</summary>
+   
     public static int Severity(StreamPacket p) => p.Metric.Equals("power", StringComparison.OrdinalIgnoreCase) ? 0 : 1;
 }

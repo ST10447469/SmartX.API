@@ -1,6 +1,6 @@
 ﻿namespace SmartX.API.Part_2;
 
-/// <summary>Stack&lt;T&gt; of manual overrides. Push on every command; Pop restores the previous device state (Undo).</summary>
+
 public class CommandHistory(DeviceRegistry registry, PredictionEngine prediction)
 {
     readonly Stack<DeviceCommand> _stack = new();
@@ -26,6 +26,6 @@ public class CommandHistory(DeviceRegistry registry, PredictionEngine prediction
         return cmd;
     }
 
-    /// <summary>Newest first (stack order).</summary>
+   
     public DeviceCommand[] Snapshot() { lock (_lock) return _stack.ToArray(); }
 }

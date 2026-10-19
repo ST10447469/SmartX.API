@@ -2,7 +2,6 @@
 
 namespace SmartX.API.Controllers;
 
-/// <summary>Serves the Part 2 pages. The data comes from the StreamController API.</summary>
 public class StreamPagesController : Controller
 {
     [HttpGet("command-stream")]
