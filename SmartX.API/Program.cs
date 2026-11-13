@@ -1,6 +1,7 @@
 
 using SmartX.API.Services;
 using SmartX.API.Part_2;
+using SmartX.API.Part3;                   
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,10 +13,12 @@ builder.Services.AddSwaggerGen();
 // DeploymentValidator wraps the recursive path-validation algorithm.
 builder.Services.AddSingleton<TelemetryStore>();
 builder.Services.AddSingleton<DeploymentValidator>();
-builder.Services.AddSingleton<TelemetryStore>();
-builder.Services.AddSingleton<DeploymentValidator>();
 
-builder.Services.AddSmartXStream();   // queues, registry, command stack, prediction engine
+// Part 2: queues, device registry, command stack and prediction engine
+builder.Services.AddSmartXStream();
+
+// Part 3: AVL telemetry history, mesh graph, BFS and minimum spanning tree
+builder.Services.AddSmartXMesh();
 
 var app = builder.Build();
 
@@ -47,4 +50,3 @@ app.MapControllerRoute(
 app.MapControllers();
 
 app.Run();
-
