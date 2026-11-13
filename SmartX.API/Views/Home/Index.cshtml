@@ -102,12 +102,15 @@
 </style>
 
 <div class="gateway-container">
+
     <div class="gateway-header">
         <h2>Smart-X Gateway</h2>
         <p>Manage your IoT ecosystem, monitor telemetry, and control connected devices.</p>
     </div>
 
     <div class="pillars">
+
+        <!-- Sensor Data Ingestion -->
         <div class="pillar-card">
             <div class="pillar-icon">⌁</div>
 
@@ -124,6 +127,7 @@
             </a>
         </div>
 
+        <!-- Command Stream -->
         <div class="pillar-card">
             <div class="pillar-icon">⌘</div>
 
@@ -139,5 +143,23 @@
                 Open Command Stream <span>→</span>
             </a>
         </div>
+
+        <!-- Network Topology -->
+        <div class="pillar-card">
+            <div class="pillar-icon">◎</div>
+
+            <h3>Network Topology &amp; Mesh Routing</h3>
+
+            <p>
+                Visualise connected IoT devices, monitor mesh connections,
+                identify offline nodes, and inspect communication routes.
+            </p>
+
+            <a class="pillar-link"
+               href="@Url.Action("Topology", "Home")">
+                Open Network Topology <span>→</span>
+            </a>
+        </div>
+
     </div>
 </div>

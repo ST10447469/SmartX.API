@@ -13,4 +13,9 @@ public class HomeController : Controller
     {
         return View("~/Views/StreamPages/CommandStream.cshtml");
     }
+
+    public IActionResult Topology()
+    {
+        return View("~/Views/StreamPages/Topology.cshtml");
+    }
 }
