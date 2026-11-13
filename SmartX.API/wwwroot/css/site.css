@@ -895,3 +895,405 @@ select:focus-visible, tr:focus-visible {
         transition: none;
     }
 }
+
+/* ==========================================================
+   Part 3: network topology page
+   ========================================================== */
+.topo {
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+    display: grid;
+    gap: 1.5rem;
+    align-items: start;
+    grid-template-columns: minmax(0, 1fr) 24rem;
+    font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 1000px) {
+    .topo {
+        grid-template-columns: 1fr;
+        padding: 1rem;
+    }
+}
+
+.topo-main, .topo-side {
+    display: grid;
+    gap: 1.5rem;
+    min-width: 0;
+    align-content: start;
+}
+
+.topo section {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 1.3rem 1.45rem;
+    min-width: 0;
+}
+
+.topo h2 {
+    margin: 0 0 0.9rem;
+    font-size: 0.95rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--mute);
+}
+
+    .topo h2::after {
+        content: "";
+        display: block;
+        clear: both;
+    }
+
+.topo .muted {
+    color: var(--mute);
+    font-size: 0.88rem;
+}
+
+.topo .empty {
+    color: var(--mute);
+    font-size: 0.9rem;
+    margin: 0.2rem 0;
+}
+
+.topo svg {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* graph drawing */
+.lnk {
+    stroke: var(--line);
+    stroke-width: 1.5;
+}
+
+    .lnk.mst {
+        stroke: var(--accent);
+        stroke-width: 3.5;
+    }
+
+    .lnk.inactive {
+        stroke: var(--alert);
+        stroke-width: 1.5;
+        stroke-dasharray: 5 6;
+        opacity: 0.55;
+    }
+
+    .lnk.route {
+        stroke: var(--info);
+        stroke-width: 6;
+        stroke-dasharray: none;
+        opacity: 1;
+    }
+
+.cost {
+    fill: var(--mute);
+    font-size: 11px;
+    text-anchor: middle;
+    paint-order: stroke;
+    stroke: var(--panel);
+    stroke-width: 4px;
+}
+
+.nd {
+    fill: var(--panel-hi);
+    stroke: var(--mute);
+    stroke-width: 2;
+    cursor: pointer;
+    transition: stroke 0.2s ease, fill 0.2s ease;
+}
+
+    .nd:hover {
+        stroke: var(--text);
+    }
+
+    .nd.gateway {
+        fill: var(--accent);
+        stroke: var(--accent-soft);
+        stroke-width: 7;
+    }
+
+    .nd.down {
+        fill: var(--alert-soft);
+        stroke: var(--alert);
+    }
+
+    .nd.isolated {
+        fill: #3a2f10;
+        stroke: var(--warn);
+    }
+
+    .nd.sel {
+        stroke: var(--info);
+        stroke-width: 4;
+    }
+
+.topo svg g:focus-visible circle {
+    stroke: var(--text);
+    stroke-width: 4;
+}
+
+.lbl {
+    fill: var(--text);
+    font-size: 12px;
+    text-anchor: middle;
+    pointer-events: none;
+}
+
+/* legend */
+.legend {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.4rem;
+    margin: 0.6rem 0;
+    padding: 0;
+    font-size: 0.85rem;
+    color: var(--mute);
+}
+
+    .legend .sw {
+        display: inline-block;
+        width: 1.6rem;
+        height: 0;
+        border-top: 4px solid var(--line);
+        vertical-align: middle;
+        margin-right: 0.45rem;
+    }
+
+        .legend .sw.mst {
+            border-color: var(--accent);
+        }
+
+        .legend .sw.route {
+            border-color: var(--info);
+        }
+
+        .legend .sw.dead {
+            border-top: 2px dashed var(--alert);
+        }
+
+    .legend .dot-key {
+        display: inline-block;
+        width: 0.7rem;
+        height: 0.7rem;
+        border-radius: 50%;
+        margin-right: 0.4rem;
+    }
+
+        .legend .dot-key.down {
+            background: var(--alert);
+        }
+
+        .legend .dot-key.iso {
+            background: var(--warn);
+        }
+
+/* summary tiles */
+.tiles {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+}
+
+    .tiles div {
+        background: var(--bg-soft);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 0.7rem 0.9rem;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .tiles b {
+        font-size: 1.7rem;
+        line-height: 1.1;
+    }
+
+    .tiles span {
+        color: var(--mute);
+        font-size: 0.8rem;
+    }
+
+/* controls */
+.topo .filters {
+    display: flex;
+    gap: 0.55rem;
+    flex-wrap: wrap;
+    align-items: end;
+    margin-bottom: 1rem;
+}
+
+.topo .fl {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.8rem;
+    color: var(--mute);
+}
+
+.topo .topo-check {
+    float: right;
+    font-size: 0.78rem;
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: 0;
+    margin-right: 0.9rem;
+    cursor: pointer;
+}
+
+.topo input, .topo select {
+    font: inherit;
+    background: var(--bg-soft);
+    border: 1px solid var(--line);
+    color: var(--text);
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+}
+
+    .topo input[type="checkbox"] {
+        padding: 0;
+        accent-color: var(--accent);
+        vertical-align: middle;
+    }
+
+    .topo input:focus, .topo select:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+
+.topo #track {
+    flex: 1;
+    min-width: 10rem;
+}
+
+.topo button {
+    font: inherit;
+    font-weight: 600;
+    background: var(--accent);
+    color: var(--accent-ink);
+    border: none;
+    padding: 0.45rem 0.95rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+    .topo button:hover {
+        background: #5eead4;
+    }
+
+    .topo button.ghost {
+        background: transparent;
+        border: 1px solid var(--line);
+        color: var(--text);
+        font-weight: 500;
+    }
+
+        .topo button.ghost:hover {
+            background: var(--panel-hi);
+            border-color: var(--mute);
+        }
+
+    .topo button.float-right {
+        float: right;
+        padding: 0.18rem 0.65rem;
+        font-size: 0.78rem;
+        text-transform: none;
+        letter-spacing: 0;
+    }
+
+/* cards, lists and history table */
+.topo .card {
+    background: var(--bg-soft);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--line);
+    border-radius: 10px;
+    padding: 0.8rem 0.95rem;
+    margin-bottom: 0.75rem;
+}
+
+    .topo .card.action {
+        border-left-color: var(--accent);
+    }
+
+    .topo .card.insight {
+        border-left-color: var(--warn);
+    }
+
+    .topo .card h3 {
+        margin: 0;
+        font-size: 0.97rem;
+    }
+
+    .topo .card p {
+        margin: 0.3rem 0 0.55rem;
+        font-size: 0.85rem;
+        color: var(--mute);
+    }
+
+.topo .dot {
+    display: inline-block;
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 50%;
+    margin-right: 0.45rem;
+    background: var(--ok);
+}
+
+    .topo .dot.off {
+        background: #5f7589;
+    }
+
+    .topo .dot.alert {
+        background: var(--alert);
+    }
+
+.topo ul.plain {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+    .topo ul.plain li {
+        padding: 0.5rem 0;
+        border-bottom: 1px solid var(--line);
+        font-size: 0.9rem;
+    }
+
+        .topo ul.plain li:last-child {
+            border-bottom: none;
+        }
+
+.hist-wrap {
+    max-height: 18rem;
+    overflow: auto;
+}
+
+.topo table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.topo th {
+    text-align: left;
+    font-weight: 600;
+    color: var(--mute);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 0.5rem 0.65rem;
+    border-bottom: 1px solid var(--line);
+    position: sticky;
+    top: 0;
+    background: var(--panel);
+}
+
+.topo td {
+    padding: 0.5rem 0.65rem;
+    border-bottom: 1px solid var(--line);
+}
