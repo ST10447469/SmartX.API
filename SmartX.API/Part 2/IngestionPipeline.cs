@@ -1,8 +1,13 @@
 ﻿namespace SmartX.API.Part_2;
+using SmartX.API.Part3;
 
 
 
-public class IngestionPipeline(DeviceRegistry registry, PredictionEngine prediction)
+/// <summary>
+/// Queue&lt;T&gt;      : standard FIFO lane for ordinary telemetry.
+/// PriorityQueue : critical lane (power spike, moisture crash). Always drained first.
+/// </summary>
+public class IngestionPipeline(DeviceRegistry registry, PredictionEngine prediction, TelemetryHistory history)
 {
     readonly Queue<StreamPacket> _standard = new();
     readonly PriorityQueue<StreamPacket, (int Severity, long Seq)> _critical = new();
@@ -52,6 +57,7 @@ public class IngestionPipeline(DeviceRegistry registry, PredictionEngine predict
     void Handle(StreamPacket p, string lane)
     {
         registry.Apply(p);
+        history.Add(p);                                            // Part 3: AVL tree history
         if (AlertRules.IsCritical(p, out var reason))
         {
             if (registry.RaiseAlert(p.Mac, p.Metric, reason))      // false => duplicate suppressed by HashSet
