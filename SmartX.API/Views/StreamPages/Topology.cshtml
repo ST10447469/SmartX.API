@@ -7,13 +7,242 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Smart-X · Network topology</title>
-    <link rel="stylesheet" href="~/css/site.css?v=3" />
+    <link rel="stylesheet" href="~/css/site.css?v=5" />
 </head>
 <body>
     @await Html.PartialAsync("_Nav")
-    <div class="placeholder">
-        <h1>Network topology and mesh routing</h1>
-        <p>This module is built in the final PoE. It will map how nodes route through the mesh.</p>
-    </div>
+    <main class="topo">
+        <div class="topo-main">
+            <section aria-label="Mesh network">
+                <h2>
+                    Mesh network
+                    <button id="resetBtn" class="ghost float-right">Reset mesh</button>
+                    <label class="topo-check float-right"><input type="checkbox" id="mstToggle" checked> Show minimum spanning tree</label>
+                </h2>
+                <svg id="graph" viewBox="0 0 800 520" role="img" aria-label="IoT mesh network graph"></svg>
+                <ul class="legend">
+                    <li><i class="sw mst"></i>MST link (lowest power)</li>
+                    <li><i class="sw route"></i>Selected node's route (fewest hops)</li>
+                    <li><i class="sw dead"></i>Link to a failed node</li>
+                    <li><i class="dot-key down"></i>Down</li>
+                    <li><i class="dot-key iso"></i>Cut off</li>
+                </ul>
+                <p class="muted">Numbers on the links are power cost. Click a node to track its route.</p>
+            </section>
+
+            <section aria-label="Telemetry history">
+                <h2>Telemetry history (AVL tree)</h2>
+                <p class="muted" id="hNode">Select a node to query its history.</p>
+                <div class="filters">
+                    <label class="fl">From <input type="datetime-local" id="hFrom"></label>
+                    <label class="fl">To <input type="datetime-local" id="hTo"></label>
+                    <label class="fl">
+                        Metric
+                        <select id="hMetric">
+                            <option value="all">All</option>
+                            <option value="moisture">Moisture</option>
+                            <option value="power">Power</option>
+                            <option value="temperature">Temperature</option>
+                            <option value="flow">Flow</option>
+                        </select>
+                    </label>
+                    <button id="hRun">Run range query</button>
+                    <button id="hLatest" class="ghost">Latest 50</button>
+                </div>
+                <p class="muted" id="hStats"></p>
+                <div class="hist-wrap">
+                    <table>
+                        <thead><tr><th>Time</th><th>Metric</th><th>Value</th></tr></thead>
+                        <tbody id="hRows"></tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <div class="topo-side">
+            <section aria-label="Network summary">
+                <h2>Network summary</h2>
+                <div class="tiles">
+                    <div><b id="sUp">-</b><span>nodes up</span></div>
+                    <div><b id="sDown">-</b><span>down</span></div>
+                    <div><b id="sIso">-</b><span>cut off</span></div>
+                    <div><b id="sMst">-</b><span>MST power cost</span></div>
+                </div>
+            </section>
+
+            <section aria-label="Track a node">
+                <h2>Track a node</h2>
+                <div class="filters">
+                    <input id="track" list="macList" placeholder="MAC address or pick a node" aria-label="MAC address">
+                    <datalist id="macList"></datalist>
+                    <button id="trackBtn">Track</button>
+                </div>
+                <div id="route"><p class="empty">Click a node on the graph, or type a MAC address.</p></div>
+            </section>
+
+            <section aria-label="Self-healing">
+                <h2>Failures and rerouting</h2>
+                <div id="reroutes"></div>
+            </section>
+
+            <section aria-label="Connected devices">
+                <h2>Connected to the gateway (BFS)</h2>
+                <ul class="plain" id="reach"></ul>
+            </section>
+        </div>
+    </main>
+    <div id="toast" role="status"></div>
+    <script>
+            const $ = s => document.querySelector(s);
+            const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+            const SX = 8, SY = 5.2;
+            let topo = null, route = null, showMst = true;
+            let sel = sessionStorage.topoSel || null;
+            const lk = (a, b) => a < b ? a + '|' + b : b + '|' + a;
+
+            async function api(url, opts) {
+              const r = await fetch(url, opts);
+              const b = await r.json().catch(() => ({}));
+              if (!r.ok) throw new Error(b.error || r.statusText);
+              return b;
+            }
+            const post = url => api(url, { method: 'POST' });
+            function toast(m) { const t = $('#toast'); t.textContent = m; t.style.display = 'block'; clearTimeout(t._h); t._h = setTimeout(() => t.style.display = 'none', 3000); }
+            const nameOf = id => { const n = topo && topo.nodes.find(x => x.id === id); return n ? n.name : id; };
+            const pathText = p => p && p.length ? p.map(nameOf).join(' → ') : 'no route';
+
+            function draw() {
+              const by = Object.fromEntries(topo.nodes.map(n => [n.id, n]));
+              const rl = new Set();
+              if (route && route.reachable) for (let i = 0; i < route.bfsPath.length - 1; i++) rl.add(lk(route.bfsPath[i], route.bfsPath[i + 1]));
+              let s = '';
+              topo.links.forEach(l => {
+                const a = by[l.a], b = by[l.b];
+                const cls = 'lnk' + (l.inMst && showMst ? ' mst' : '') + (!l.active ? ' inactive' : '') + (rl.has(lk(l.a, l.b)) ? ' route' : '');
+                s += `<line class="${cls}" x1="${a.x * SX}" y1="${a.y * SY}" x2="${b.x * SX}" y2="${b.y * SY}"/>`;
+              });
+              topo.links.forEach(l => {
+                const a = by[l.a], b = by[l.b];
+                s += `<text class="cost" x="${(a.x + b.x) / 2 * SX}" y="${(a.y + b.y) / 2 * SY + 4}">${l.cost}</text>`;
+              });
+              topo.nodes.forEach(n => {
+                const r = n.kind === 'gateway' ? 20 : 14, x = n.x * SX, y = n.y * SY;
+                const cls = 'nd' + (n.kind === 'gateway' ? ' gateway' : '') + (n.down ? ' down' : (!n.reachable ? ' isolated' : '')) + (n.id === sel ? ' sel' : '');
+                s += `<g data-id="${esc(n.id)}" tabindex="0" role="button" aria-label="${esc(n.name)}">
+                  <circle class="${cls}" cx="${x}" cy="${y}" r="${r}"/>
+                  ${n.down ? `<text class="lbl" x="${x}" y="${y + 5}">×</text>` : ''}
+                  <text class="lbl" x="${x}" y="${y + r + 16}">${esc(n.name)}</text></g>`;
+              });
+              $('#graph').innerHTML = s;
+            }
+
+            function renderSummary() {
+              $('#sUp').textContent = topo.nodes.filter(n => !n.down).length + ' / ' + topo.nodes.length;
+              $('#sDown').textContent = topo.down.length;
+              $('#sIso').textContent = topo.isolated.length;
+              $('#sMst').textContent = topo.mstCost;
+              const list = $('#macList');
+              if (list.options.length !== topo.nodes.length)
+                list.innerHTML = topo.nodes.map(n => `<option value="${esc(n.id)}">${esc(n.name)}</option>`).join('');
+            }
+
+            function renderRoute() {
+              const box = $('#route');
+              if (!sel || !route) { box.innerHTML = '<p class="empty">Click a node on the graph, or type a MAC address.</p>'; return; }
+              const status = route.down ? '<span class="dot alert"></span>Down' : route.reachable ? '<span class="dot"></span>Connected' : '<span class="dot off"></span>Cut off from the gateway';
+              box.innerHTML = `<div class="card ${route.reachable ? 'action' : 'insight'}">
+                  <h3>${esc(route.name)}</h3><p>${esc(route.id)} · ${status}</p>
+                  ${route.reachable ? `
+                    <p><b>Fewest hops (BFS):</b> ${esc(pathText(route.bfsPath))}<br>${route.bfsHops} hop(s), power cost ${route.bfsCost}</p>
+                    <p><b>Lowest power (MST):</b> ${esc(pathText(route.mstPath))}<br>power cost ${route.mstCost}</p>` : ''}
+                  <button id="failBtn" class="${route.down ? '' : 'ghost'}">${route.down ? 'Restore node' : 'Simulate failure'}</button>
+                </div>`;
+            }
+
+            function renderReroutes() {
+              const box = $('#reroutes');
+              if (!topo.reroutes.length) { box.innerHTML = '<p class="empty">Every node is up. Select a node and click "Simulate failure" to watch the mesh heal itself.</p>'; return; }
+              box.innerHTML = topo.reroutes.map(r => `<div class="card insight"><h3>${esc(r.downName)} is down</h3>
+                ${r.affected.length ? r.affected.map(a => a.isolated
+                  ? `<p><b>${esc(a.name)}</b>: cut off, no route to the gateway.</p>`
+                  : `<p><b>${esc(a.name)}</b><br>was: ${esc(pathText(a.oldPath))}<br>now hops via: ${esc(pathText(a.newPath))}</p>`).join('')
+                  : '<p>No other node routed through it.</p>'}</div>`).join('');
+            }
+
+            async function renderReach() {
+              const r = await api('/api/mesh/reachable?from=GATEWAY');
+              $('#reach').innerHTML = r.reachable.map(n => `<li><strong>${esc(n.name)}</strong> · ${n.hops} hop(s)${n.via ? ' via ' + esc(nameOf(n.via)) : ''}</li>`).join('')
+                + r.cutOff.map(id => `<li><span class="dot off"></span><strong>${esc(nameOf(id))}</strong> · cut off</li>`).join('')
+                + r.down.map(id => `<li><span class="dot alert"></span><strong>${esc(nameOf(id))}</strong> · down</li>`).join('');
+            }
+
+            async function loadRoute() {
+              route = null;
+              if (sel) {
+                try { route = await api('/api/mesh/route/' + encodeURIComponent(sel)); }
+                catch (e) { toast(e.message); sel = null; sessionStorage.removeItem('topoSel'); }
+              }
+              $('#hNode').textContent = route ? 'Querying: ' + route.name + ' (' + route.id + ')' : 'Select a node to query its history.';
+              if (route) $('#track').value = route.id;
+              renderRoute(); draw();
+            }
+
+            async function load() {
+              topo = await api('/api/mesh/topology');
+              renderSummary(); renderReroutes();
+              await renderReach();
+              await loadRoute();
+            }
+
+            async function selectNode(id) {
+              sel = id.trim().toUpperCase();
+              sessionStorage.topoSel = sel;
+              await loadRoute();
+            }
+
+            async function runHistory(latest) {
+              if (!sel) { toast('Select a node first.'); return; }
+              const base = '/api/history/' + encodeURIComponent(sel);
+              let url = base + '/latest?take=50';
+              if (!latest) {
+                const f = new Date($('#hFrom').value), t = new Date($('#hTo').value);
+                if (isNaN(f) || isNaN(t)) { toast('Pick a valid From and To time.'); return; }
+                url = base + '?from=' + encodeURIComponent(f.toISOString()) + '&to=' + encodeURIComponent(t.toISOString()) + '&metric=' + $('#hMetric').value;
+              }
+              try {
+                const r = await api(url);
+                $('#hStats').textContent = r.treeSize === 0
+                  ? 'No readings stored for this node yet. Devices only have history after they send telemetry: start the simulator on the Command stream page.'
+                  : (latest ? `The AVL tree holds ${r.treeSize} readings (height ${r.treeHeight}). Showing the latest ${r.matched}.`
+                            : `The AVL tree holds ${r.treeSize} readings (height ${r.treeHeight}). The range query visited ${r.nodesVisited} nodes and matched ${r.matched}.`);
+                $('#hRows').innerHTML = r.points.slice().reverse().map(p =>
+                  `<tr><td>${esc(new Date(p.time).toLocaleString())}</td><td>${esc(p.metric)}</td><td>${esc(p.value)}</td></tr>`).join('')
+                  || '<tr><td colspan="3" class="muted">No readings in that range.</td></tr>';
+              } catch (e) { toast(e.message); }
+            }
+
+            function initTimes() {
+              const loc = d => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+              const now = new Date();
+              $('#hFrom').value = loc(new Date(now.getTime() - 3600000));
+              $('#hTo').value = loc(new Date(now.getTime() + 60000));
+            }
+
+            $('#graph').addEventListener('click', e => { const g = e.target.closest('g[data-id]'); if (g) selectNode(g.dataset.id); });
+            $('#graph').addEventListener('keydown', e => { if (e.key === 'Enter') { const g = e.target.closest('g[data-id]'); if (g) selectNode(g.dataset.id); } });
+            $('#mstToggle').addEventListener('change', e => { showMst = e.target.checked; draw(); });
+            $('#trackBtn').addEventListener('click', () => { const v = $('#track').value.trim(); if (v) selectNode(v); });
+            $('#track').addEventListener('keydown', e => { if (e.key === 'Enter') { const v = e.target.value.trim(); if (v) selectNode(v); } });
+            $('#resetBtn').addEventListener('click', async () => { try { await post('/api/mesh/reset'); toast('Mesh reset: all nodes are up.'); await load(); } catch (e) { toast(e.message); } });
+            $('#route').addEventListener('click', async e => {
+              if (!e.target.closest('#failBtn') || !route) return;
+              try { await post('/api/mesh/nodes/' + encodeURIComponent(route.id) + (route.down ? '/up' : '/down')); await load(); } catch (er) { toast(er.message); }
+            });
+            $('#hRun').addEventListener('click', () => runHistory(false));
+            $('#hLatest').addEventListener('click', () => runHistory(true));
+
+            initTimes();
+            load().then(() => { if (sel) runHistory(true); });
+    </script>
 </body>
 </html>
